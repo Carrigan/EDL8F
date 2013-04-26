@@ -14,6 +14,13 @@ peripherals are located from within code.
 
 Please see the Examples section for the intended use of this library.
 
+## Status
+
+This framework is planned to be used on the LPC800-MAX board from NXP. This board will
+provide a cheap and easy way for hobbyists to break into the ARM market. No firm testing
+can be done until the LPC800-MAX is released, but MSVC++ Express 2010 is being used to
+test individual modules until then.
+
 ## Modules
 
 - EventManager Module

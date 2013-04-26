@@ -1,118 +1,107 @@
-#include <string.h>
 #include "EventManager.h"
-#include <stdint.h>
 
-#define DEBUG
-
-void EventManager_init(EventQueue_t *pEventQueue, Event_t *pEventBuffer, unsigned int pEventBufferSize, char *pDataBuffer, unsigned int pDataBufferSize)
+void EventManager_init(EventQueue_t *pEventQueue, unsigned char *pEventBuffer, unsigned int pEventBufferSize)
 {
-	// Initialize the event manager
-	pEventQueue -> capacity = pEventBufferSize;
-	pEventQueue -> spaceLeft = pEventBufferSize;
-	pEventQueue -> eventBuffer = pEventBuffer;
-	pEventQueue -> writeIndex = 0;
-	pEventQueue -> readIndex = 0;
-	pEventQueue -> entrySize = sizeof(Event_t);
-
-	// Initialize the data queue
-	pEventQueue -> dataQueue.readIndex = 0;
-	pEventQueue -> dataQueue.writeIndex = 0;
-	pEventQueue -> dataQueue.dataBuffer = pDataBuffer;
-	pEventQueue -> dataQueue.spaceLeft = pDataBufferSize;
-	pEventQueue -> dataQueue.capacity = pDataBufferSize;
+	pEventQueue->eventBuffer = pEventBuffer;
+	pEventQueue->bufferEnd = pEventBuffer + pEventBufferSize;
+	pEventQueue->head = pEventBuffer;
+	pEventQueue->tail = pEventBuffer;
+	pEventQueue->capacity = pEventBufferSize;
+	pEventQueue->spaceLeft = pEventBufferSize;
 }
 
-QueueReturn_t	EventManager_get(EventQueue_t *pEventQueue, Event_t *pEventRead, char *pDataRead)
+QueueReturn_t	EventManager_get(EventQueue_t *pEventQueue, Event_t *pEventRead)
 {
 	unsigned int i = 0;
-
-	if(pEventQueue->spaceLeft == pEventQueue -> capacity)
+	unsigned char *currentPtr = pEventRead->dataPtr;
+	
+	if(pEventQueue -> spaceLeft == pEventQueue -> capacity)
 	{
-		return EVENT_QUEUE_EMPTY;
+		return QUEUE_EMPTY;
 	}
 	
-	// Copy the event.
-	memcpy(pEventRead, &pEventQueue->eventBuffer[pEventQueue -> readIndex], pEventQueue->entrySize);
-
-	// Copy the data.
-	for(i; i < pEventRead->eventDataLength; i++)
+	// Get the ID
+	pEventRead -> eventID = (EventId_t)(*(pEventQueue -> tail));
+	
+	// Increment read pointer
+	pEventQueue -> tail++;
+	if(pEventQueue -> tail == pEventQueue -> bufferEnd)
+		pEventQueue -> tail = pEventQueue -> eventBuffer;
+	
+	// Get the length
+	pEventRead -> dataLength = *(pEventQueue -> tail);
+	
+	// Increment read pointer
+	pEventQueue -> tail++;
+	if(pEventQueue -> tail == pEventQueue -> bufferEnd)
+		pEventQueue -> tail = pEventQueue -> eventBuffer;
+	
+	for(; i < pEventRead -> dataLength; i++)
 	{
-		pDataRead[i] = pEventQueue->dataQueue.dataBuffer[pEventQueue->dataQueue.readIndex];
-		pEventQueue->dataQueue.readIndex++;
-		if(pEventQueue->dataQueue.readIndex == pEventQueue->dataQueue.capacity)
-		{
-			pEventQueue -> dataQueue.readIndex = 0;
-		}
-		pEventQueue->dataQueue.spaceLeft++;
+		// Get next data byte
+		*currentPtr = *(pEventQueue -> tail);
+		
+		// Increment the write pointer
+		currentPtr++;
+		
+		// Increment read pointer
+		pEventQueue -> tail++;
+		if(pEventQueue -> tail == pEventQueue -> bufferEnd)
+			pEventQueue -> tail = pEventQueue -> eventBuffer;	
 	}
+	
+	// Fix space left
+	pEventQueue -> spaceLeft += (pEventRead -> dataLength + 2);
 
-	// Advance the Event tail.
-	pEventQueue->readIndex++;
-	if(pEventQueue->readIndex == pEventQueue -> capacity)
-	{
-		pEventQueue->readIndex = 0;
-	}	
-
-	// We have more space now.
-	pEventQueue -> spaceLeft++;
-
-	// Return that our write was successful.
+	// AOK	
 	return QUEUE_SUCCESS;
 }
 
-QueueReturn_t	EventManager_put(EventQueue_t *pEventQueue, Event_t *pEventWrite, char *pDataWrite)
+
+QueueReturn_t	EventManager_put(EventQueue_t *pEventQueue, Event_t *pEventWrite)
 {
 	unsigned int i = 0;
+	unsigned char *currentPtr = pEventWrite->dataPtr;
 	
-	// If theres no event room left, kick back an error.
-	if(pEventQueue->spaceLeft == 0)
+	if(pEventQueue -> spaceLeft < (pEventWrite->dataLength + 2))
 	{
-		return EVENT_QUEUE_FULL;
-	}
-	
-	// If theres no data room left, error also.
-	if(pEventQueue->dataQueue.spaceLeft < pEventWrite->eventDataLength)
-	{
-		return DATA_QUEUE_FULL;
+		return QUEUE_FULL;
 	}
 	
-	// Copy over the event.
-	memcpy(&pEventQueue->eventBuffer[pEventQueue -> writeIndex], pEventWrite, pEventQueue->entrySize);
+	// Write the ID First
+	*(pEventQueue -> head) = (unsigned char)(pEventWrite -> eventID);
+	
+	// Increment write pointer
+	pEventQueue -> head++;
+	if(pEventQueue -> head == pEventQueue -> bufferEnd)
+		pEventQueue -> head = pEventQueue -> eventBuffer;
+	
+	// Write the length next
+	*(pEventQueue -> head) = pEventWrite -> dataLength;
+	
+	// Increment write pointer
+	pEventQueue -> head++;
+	if(pEventQueue -> head == pEventQueue -> bufferEnd)
+		pEventQueue -> head = pEventQueue -> eventBuffer;	
 
-	// Copy over the data.
-	for(i; i < pEventWrite->eventDataLength; i++)
+	// Write the data
+	for(; i < pEventWrite->dataLength; i++)
 	{
-		pEventQueue->dataQueue.dataBuffer[pEventQueue->dataQueue.writeIndex] = pDataWrite[i];
-		pEventQueue->dataQueue.writeIndex++;
-		if(pEventQueue->dataQueue.writeIndex == pEventQueue->dataQueue.capacity)
-		{
-			pEventQueue->dataQueue.writeIndex = 0;
-		}
-		pEventQueue->dataQueue.spaceLeft--;
+		// Write a byte of data
+		*(pEventQueue -> head) = *currentPtr;
+		
+		// Advance the read pointer
+		currentPtr++;
+	
+		// Increment write pointer
+		pEventQueue -> head++;
+		if(pEventQueue -> head == pEventQueue -> bufferEnd)
+			pEventQueue -> head = pEventQueue -> eventBuffer;	
 	}
-
-#ifdef DEBUG
-	// DEBUG ONLY!!! Adds an extra 0 for printfs
-	pEventQueue -> eventBuffer[pEventQueue -> writeIndex].eventDataLength++;
-	pEventQueue->dataQueue.dataBuffer[pEventQueue->dataQueue.writeIndex] = 0;
-	pEventQueue->dataQueue.writeIndex++;
-	if(pEventQueue->dataQueue.writeIndex == pEventQueue->dataQueue.capacity)
-	{
-		pEventQueue->dataQueue.writeIndex = 0;
-	}
-	pEventQueue->dataQueue.spaceLeft--;
-#endif	
-
-	// Advance the Event head.
-	pEventQueue->writeIndex++;
-	if(pEventQueue->writeIndex == pEventQueue -> capacity)
-	{
-		pEventQueue->writeIndex = 0;
-	}	
-
-	// We have less space now.
-	pEventQueue->spaceLeft--;
-
-	// Return that our write was successful.
+	
+	// Fix space left
+	pEventQueue -> spaceLeft -= (pEventWrite -> dataLength + 2);
+	
+	// AOK
 	return QUEUE_SUCCESS;
 }
