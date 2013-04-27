@@ -1,1 +1,6 @@
 #uVision Ignores:
+*.s#*
+*.b#*
+*.gpi
+*.dri
+
