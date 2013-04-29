@@ -1,6 +1,16 @@
-#uVision Ignores:
+# uVision Ignores:
+*.plg
+*.dep
+*.Brian
+*.uvopt
+obj/
+lst/
+
+# Eagle Ignores:
 *.s#*
 *.b#*
 *.gpi
 *.dri
+
+
 

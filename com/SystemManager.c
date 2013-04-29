@@ -1,12 +1,34 @@
+/*
+  	Author: Brian Carrigan
+  	Date: 4/29/2013
+  	Email: brian.c.carrigan@gmail.com
+ 
+	This file is part of the EDL8F Framework.
+
+    The EDL8F Framework is free software: you can redistribute it and/or 
+	modify it under the terms of the GNU General Public License as published 
+	by the Free Software Foundation, either version 3 of the License, or 
+	(at your option) any later version.
+
+    The EDL8F Framework is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of 
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+	Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with the EDL8F Framework.  If not, see <http://www.gnu.org/licenses/>
+ */
+
 #include "LPC8xx.h"
 #include "EDL8F_types.h"
+#include "EDL8F_WKT.h"
 #include "SystemManager.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 //								Flag Defines								 //
 ///////////////////////////////////////////////////////////////////////////////
 unsigned int		mConfiguredFlags;
-#DEFINE FLAG_WKT	0x00000001
+#define FLAG_WKT	0x00000001
 
 ///////////////////////////////////////////////////////////////////////////////
 //						  System Manager State Machine						 //
@@ -56,7 +78,7 @@ void 	SystemManager_postSetup()
 void setupWktTimer(unsigned int pPeriod)
 {
 	// Save the period
-	mWKT.periodInUnits = pPeriod*10;
+	mWKT.periodInTicks = pPeriod*10;
 	
 	// Set as configured
 	mWKT.configured = 1;
@@ -80,7 +102,7 @@ void changeWktTimer(unsigned int pPeriod)
 		wkt_stop();
 		
 		// Set the new period
-		mWKT.periodInUnits = pPeriod*10;
+		mWKT.periodInTicks = pPeriod*10;
 		
 		// If we are running, begin the timer again
 		if(mSystemState == STATE_RUNNING)

@@ -19,29 +19,24 @@
     along with the EDL8F Framework.  If not, see <http://www.gnu.org/licenses/>
  */
 
-#ifndef EDL8F_PINDEFS_H
-#define EDL8F_PINDEFS_H
+#include "EDL8F.h"
 
-typedef enum
+void setup()
+{	
+	// Set up pin 11 as a push/pull output.
+	gpio_pinMode(P11, OUTPUT_PUSHPULL);
+	
+	// Set up the Wake-Up Timer to interrupt every 500ms.
+	setupWktTimer(500);
+}
+
+void onWkt()
 {
-	P1	= 17,
-	P2	= 13,
-	P3	= 12,
-	P4	= 5,
-	P5	= 4,
-	P6 	= 3,
-	P7	= 2,
-	P8	= 11,
-	P9	= 10,
-	P10	= 16,
-	P11	= 15,
-	P12	= 1,
-	P13	= 9,
-	P14	= 8,
-	P17	= 7,
-	P18	= 6,
-	P19	= 0,
-	P20	= 14,
-} Pin_t;
+	// Toggle the pin
+	gpio_togglePin(P11);
+}
 
-#endif
+void processor()
+{
+
+}

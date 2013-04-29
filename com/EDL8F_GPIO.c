@@ -1,9 +1,26 @@
-#include "LPC8xx.h"
-#include "edl8f_GPIO.h"
-#include "EDL8F_types.h"
-#include "EDL8F_pindefs.h"
+/*
+  	Author: Brian Carrigan
+  	Date: 4/29/2013
+  	Email: brian.c.carrigan@gmail.com
+ 
+	This file is part of the EDL8F Framework.
 
-static void gpio_error(void);
+    The EDL8F Framework is free software: you can redistribute it and/or 
+	modify it under the terms of the GNU General Public License as published 
+	by the Free Software Foundation, either version 3 of the License, or 
+	(at your option) any later version.
+
+    The EDL8F Framework is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of 
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+	Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with the EDL8F Framework.  If not, see <http://www.gnu.org/licenses/>
+ */
+
+#include "LPC8xx.h"
+#include "EDL8F_GPIO.h"
 
 void gpio_setup()
 {
@@ -107,11 +124,11 @@ void gpio_pinMode(Pin_t pPin, PinMode_t pMode)
 	}
 
 	// Set Direction
-	if(pMode == INPUT_FLOATING || pMode == INPUT_PULLDOWN || pMODE == INPUT_PULLUP)
+	if(pMode == INPUT_FLOATING || pMode == INPUT_PULLDOWN || pMode == INPUT_PULLUP)
 	{
-		LPC_GPIO_PORT -> DIR &= ~(1ul << (unsigned int)pPin);
+		LPC_GPIO_PORT -> DIR0 &= ~(1ul << (unsigned int)pPin);
 	} else {
-		LPC_GPIO_PORT -> DIR |= (1ul << (unsigned int)pPin);
+		LPC_GPIO_PORT -> DIR0 |= (1ul << (unsigned int)pPin);
 	}
 
 }
@@ -125,7 +142,7 @@ unsigned int gpio_read(unsigned int pMask)
 	return read;
 }
 
-unsigned int gpio_readPin(Pin_t pPin);
+unsigned int gpio_readPin(Pin_t pPin)
 {
 	if(LPC_GPIO_PORT -> PIN0 & (1ul << (unsigned char)pPin))
 	{
@@ -153,7 +170,8 @@ void gpio_clearPin(Pin_t pPin)
 	LPC_GPIO_PORT -> CLR0 = (1ul << (unsigned int)pPin);
 }
 
-static void gpio_error()
+void gpio_togglePin(Pin_t pPin)
 {
-	while(1);
+	LPC_GPIO_PORT -> NOT0 = (1ul << (unsigned int)pPin);
 }
+
